@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { GenericOutlineProvider } from "./genericOutlineProvider";
 import { OutlineItem } from "./outlineItem";
+import MarkdownIt from "markdown-it";
 
 /**
  * Markdown-specific outline provider.
@@ -31,23 +32,37 @@ export class MarkdownOutlineProvider extends GenericOutlineProvider {
 
   /**
    * Direct markdown parsing for languages without symbol provider.
-   * Parses headings (H1-H6) using regex patterns.
+   * Uses markdown-it parser for CommonMark-compliant parsing.
    */
   private parseMarkdownDirectly(document: vscode.TextDocument): OutlineItem[] {
     const items: OutlineItem[] = [];
-    const headingRegex = /^(#{1,6})\s+(.+)$/;
+    const md = new MarkdownIt();
+    const text = document.getText();
 
-    for (let i = 0; i < document.lineCount; i++) {
-      const line = document.lineAt(i);
-      const match = headingRegex.exec(line.text);
+    // Parse markdown and extract headings
+    const tokens = md.parse(text, {});
 
-      if (match) {
-        const level = match[1].length; // Number of # characters
-        const text = match[2].trim();
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+
+      // markdown-it uses 'heading_open' token for headings
+      if (token.type === "heading_open") {
+        const level = parseInt(token.tag.substring(1), 10); // Extract number from 'h1', 'h2', etc.
+
+        // Find the corresponding inline token with the heading text (usually next token)
+        let headingText = "";
+        if (i + 1 < tokens.length && tokens[i + 1].type === "inline") {
+          headingText = this.extractTextFromInlineToken(tokens[i + 1]);
+        }
+
+        // token.map contains [startLine, endLine] in 0-based indexing
+        // Convert to 1-based line numbers for VS Code (map[0] is the line number)
+        const lineNumber = token.map ? token.map[0] : 0;
+        const line = document.lineAt(lineNumber);
 
         // Create range for this heading
-        const startPos = new vscode.Position(i, 0);
-        const endPos = new vscode.Position(i, line.text.length);
+        const startPos = new vscode.Position(lineNumber, 0);
+        const endPos = new vscode.Position(lineNumber, line.text.length);
         const range = new vscode.Range(startPos, endPos);
 
         // Map heading level to symbol kind
@@ -55,7 +70,7 @@ export class MarkdownOutlineProvider extends GenericOutlineProvider {
           level === 1 ? vscode.SymbolKind.File : vscode.SymbolKind.String;
 
         const item = new OutlineItem(
-          text,
+          headingText.trim(),
           level,
           range,
           range,
@@ -70,6 +85,23 @@ export class MarkdownOutlineProvider extends GenericOutlineProvider {
 
     // Build hierarchy from flat list
     return this.buildHierarchy(items);
+  }
+
+  /**
+   * Recursively extracts text content from markdown-it inline token.
+   */
+  private extractTextFromInlineToken(token: any): string {
+    if (token.type === "text") {
+      return token.content;
+    }
+
+    if (token.children) {
+      return token.children
+        .map((child: any) => this.extractTextFromInlineToken(child))
+        .join("");
+    }
+
+    return "";
   }
 
   /**

@@ -2,7 +2,7 @@
   "name": "outline-eclipsed-qmd",
   "displayName": "Outline Eclipsed",
   "description": "An outline view for VS Code that lets you drag and drop to reorganize your document structure. Supports multiple languages.",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "publisher": "umaxfun",
   "icon": "icon.png",
   "author": {
@@ -81,5 +81,9 @@
     "eslint": "^9.36.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "markdown-it": "^14.1.0"
   }
 }

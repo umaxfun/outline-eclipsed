@@ -37,6 +37,11 @@ This document outlines the manual testing steps for PI-9: Enrich tree items with
    - Constants (`DEFAULT_TIMEOUT`, `MAX_RETRIES`): Show values ("5000", "3")
    - Tooltips include symbol kind and line numbers for all symbols
 
+```markdown
+# qweqweqwe
+```
+
+
 ### Test 4: Python File - Constants Show Values
 1. Open `test-fixtures/sample.py`
 2. Wait for language server to activate (may take a moment)
