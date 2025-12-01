@@ -5,3 +5,5 @@ node_modules
 *.vsix
 test-fixtures/*.js
 test-fixtures/*.js.map
+scripts/*.js
+scripts/*.js.map
